@@ -1,0 +1,13 @@
+Following Modules are required to run TetraAI:
+- pygame
+- sys
+- numpy
+- copy
+- math
+- time
+- pyautogui
+- matplotlib
+- csv
+
+Use pip to install
+[Future reference: Use get_pip and try to have a built in module installer in code]
