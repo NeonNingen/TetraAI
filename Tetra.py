@@ -44,6 +44,8 @@ class Game:
 	random_chance: float = 0.5
 	weights = [-1, -1, -1, -30]  # Starting weight values
 
+	tetromino_WIDTH: int = 6
+	tetromino_HEIGHT: int = 6
 	tetromino = Pieces()
 	
 	# Dict for the pieces
@@ -57,12 +59,11 @@ class Game:
     'T': tetromino.piece_T()
 }
 	
-    def __init__(self, game_width, game_height, fps):
+    def __init__(self, game_WIDTH, game_HEIGHT):
         pygame.display.set_caption('$s') % 'TetraAI'
-        self.game_width = game_width
-        self.game_height = game_height
-        self.FPS = fps
-        self.gameDisplay = pygame.display.set_mode((game_width, game_height+60))
+        self.game_WIDTH = game_WIDTH
+        self.game_HEIGHT = game_HEIGHT
+        self.gameDisplay = pygame.display.set_mode((game_WIDTH, game_HEIGHT+60))
         self.BOX_SIZE: int = 30
         self.BOARD_WIDTH: int = 20
     	self.BOARD_HEIGHT: int = 30
@@ -72,10 +73,12 @@ class Game:
         self.BORDER_C = YELLOW
         self.BACKGROUND_C = BLACK
         self.TEXT_C = WHITE
-        self.COLORS = (ORANGE, BLUE, YELLOW, PURPLE, TEALGRAY)
+        self.COLOURS = (ORANGE, BLUE, YELLOW, PURPLE, TEALGRAY)
         self.score: int = 0
         self.games_achieved: int = 0 # games_completed
         self.step_reward: int = 0 # one_step_reward = 0
+		self.GAME_MARGIN = int((game_WIDTH - self.BOARD_WIDTH * self.BOX_SIZE) / 2)
+		self.TOP_MARGIN = game_HEIGHT - (self.BOARD_HEIGHT * self.BOX_SIZE) - 5
 
 	"""
     The gameplay function is the handler of the game. It performs the game construction aswell as the learning segment of the AI. It consists of 2 arguments, 
@@ -202,45 +205,183 @@ class Game:
 				time_position(3)
 				games_achieved += 1
 		# Draw all this on the screen
-		DISPLAYSURF.fill*(self.BACKGROUND_C)
+		DISPLAYSURF.fill(self.BACKGROUND_C)
 		draw_screen(screen)
 		draw_handler(self.score, level, current_position)
 		if falling_piece is not None:
 			draw_piece(falling_piece)
-		pygame.display.update
-		FPSCLOCK.tick(self.FPS)
-
-# Completed Section
+		pygame.display.update()
+		FPSCLOCK.tick(60)
 
 
-def Valid_Quit():    # import pygame.locals  as key
-    for event in pygame.event.get(QUIT): 
-        terminate()
-    for event in pygame.event.get(KEYUP): # get all the KEYUP events
-        if event.key == K_ESCAPE:
-            terminate() 
-        pygame.event.post(event) k
+		def Valid_Quit():    # import pygame.locals as * replaces keys
+		    for event in pygame.event.get(QUIT): 
+		        terminate()
+		    for event in pygame.event.get(KEYUP): # get all the KEYUP events
+		        if event.key == K_ESCAPE:
+		            terminate() 
+		        pygame.event.post(event) 
 
-def makeTextObjs(text, font, color):
-    surf = font.render(text, True, color)
-    return surf, surf.get_rect()
+		def makeTextObjs(text, font, colour): #surf -> text_obj
+		    text_obj = font.render(text, True, colour)
+		    return text_obj, text_obj.get_rect()
+
+		def show_text_on_screen(self, text):
+		    # Create big text!
+		    title_text_obj, title_rect = makeTextObjs(text, big_FONT, shadowCOLOUR)
+		    title_rect.center = (int(self.game_WIDTH / 2), int(self.game_HEIGHT / 2))
+		    DISPLAYSURF.blit(title_text_obj, title_rect)
+
+		    # Create Text!
+		    title_text_obj, title_rect = makeTextObjs(text, big_FONT, textCOLOUR)
+		    title_rect.center = (int(self.game_WIDTH / 2) - 3, int(self.game_HEIGHT / 2) - 3)
+		    DISPLAYSURF.blit(title_text_obj, title_rect)
+
+		    # Draw mini text!
+		    press_key_text_obj, press_key_rect = makeTextObjs('Please wait to advance.',
+		                                                    small_FONT, textCOLOR)
+		    press_key_rect.center = (int(self.game_WIDTH / 2), int(self.game_HEIGHT / 2) + 100)
+		    DISPLAYSURF.blit(press_key_text_obj, press_key_rect)
+
+		    pygame.display.update()
+		    FPSCLOCK.tick()
+		    time.sleep(0.5)
 
 
-def terminate():
-    pygame.quit()
-    sys.exit()
+		def terminate():
+		    pygame.quit()
+		    quit()
 
 
-def checkForKeyPress():
-    # Go through event queue looking for a KEYUP event.
-    # Grab KEYDOWN events to remove them from the event queue.
-    checkForQuit()
+		def checkForKeyPress():
+			# Look for a keyup event, if event is found then returb a keydown
+		    Valid_Quit()
+		    for event in pygame.event.get([KEYUP, KEYDOWN]):
+		        if event.type == KEYDOWN:
+		            continue
+		        return event.key
+		    return None
 
-    for event in pygame.event.get([KEYDOWN, KEYUP]):
-        if event.type == KEYDOWN:
-            continue
-        return event.key
-    return None
+		def fall_frequency_and_level(score):
+			# Score and level system
+		    level = int(score / 10) + 1
+		    fall_frequency = 0.07 * math.exp(
+		        (1 - level) / 3) 
+		    return level, fall_frequency
+
+
+		def return_new_piece(self):
+		    # Makes random forms of tetraminos then returns them
+		    # Starts at the top of the board
+		    shapes = random.choice(list(PIECES.keys()))
+		    new_pieces = {
+		        'shape': shapes,
+		        'rotation': random.randint(0, len(PIECES[shapes]) - 1),
+		        'x': int(self.BOARD_WIDTH / 2) - int(tetromino_WIDTH / 2),
+		        'y': -2, 
+		        'color': random.randint(1, len(self.COLOURS) - 1)
+		    }
+		    return new_pieces
+
+		def create_box(self, box_x, box_y, colour, cord_x = None, cord_y = None): #pixelx = cord_x, draw_box -> create_box
+			# creates a box with each tetromino taking up a grid on the box
+			# if cord_x or cord_y == True then store cords, used in the converter
+		    if colour == BLANK:
+		        return
+		    if cordx is None and cord_y is None:
+		        cord_x, cord_y = convert_to_pixel_coords(box_x, box_y)
+		    pygame.draw.rect(DISPLAYSURF, self.COLOURS[colour],
+		                     (cord_x + 1, cord_y + 1, self.BOX_SIZE - 1, self.BOX_SIZE - 1))
+		    pygame.draw.rect(DISPLAYSURF, LIGHTCOLORS[color],
+		                     (cord_x + 1, cord_y + 1, self.BOX_SIZE - 4, self.BOX_SIZE - 4))
+
+
+		def create_board(self, board):
+		    # Create board
+		    pygame.draw.rect(DISPLAYSURF, self.BORDER_C,
+		                     (GAME_MARGIN - 3, TOP_MARGIN - 7, (self.BOARD_WIDTH * self.BOX_SIZE) + 8,
+		                      (self.BOARD_HEIGHT * self.BOX_SIZE) + 8), 5)
+
+		    # make background
+		    pygame.draw.rect(
+		        DISPLAYSURF, self.BACKGROUND_C, 
+		        (GAME_MARGIN, TOP_MARGIN, self.BOX_SIZE * self.BOARD_WIDTH, self.BOX_SIZE * self.BOARD_HEIGHT))
+		    # draw the individual grids on the board
+		    # Each grid represents a box that is placed on the board
+		    for x in range(self.BOARD_WIDTH):
+		        for y in range(self.BOARD_HEIGHT):
+		            create_box(x, y, board[x][y])
+
+		def get_blank_board(self):
+			# Make blank board
+		    board = []
+		    for i in range(self.BOARD_WIDTH):
+		        board.append(['0'] * self.BOARD_HEIGHT)
+		    return board
+
+		def add_to_board(self, board, piece):
+		    # add pieces to board dependent to location
+		    for x in range(self.tetromino_WIDTH):
+		        for y in range(self.tetromino_HEIGHT):
+		            if PIECES[piece['shape']][piece['rotation']][y][x] != BLANK and x + piece['x'] < 10 and y + piece['y'] < 20:
+		                board[x + piece['x']][y + piece['y']] = piece['color']
+		                # DEBUGGING NOTE: SOMETIMES THIS IF STATEMENT ISN'T
+		                # SATISFIED, WHICH NORMALLY WOULD RAISE AN ERROR.
+		                # NOT SURE WHAT CAUSES THE INDICES TO BE THAT HIGH.
+		                # THIS IS A BAND-AID FIX
+
+
+
+
+
+		def is_on_board(self, x, y):
+		    return y < self.BOARD_HEIGHT and x >= 0 and x < self.BOARD_WIDTH 
+
+
+		def correct_position(self, board, piece, adj_x=0, adj_y=0):
+		    # True if piece do not colide
+		    for x in range(self.tetromino_WIDTH):
+		        for y in range(self.tetromino_HEIGHT):
+		            is_above_board = y + piece['y'] + adj_y < 0
+		            if is_above_board or PIECES[piece['shape']][piece['rotation']][y][x] == BLANK:
+		                continue
+		                # not on board
+		            if not is_on_board(x + piece['x'] + adj_x, y + piece['y'] + adj_y):
+		                return False  
+		                # collision
+		            if board[x + piece['x'] + adj_x][y + piece['y'] + adj_y] != BLANK:
+		                return False  
+		    return True
+
+
+		def is_complete_line(self, board, y):
+		    # True if no gaps
+		    for x in range(self.BOARD_WIDTH):
+		        if board[x][y] == BLANK:
+		            return False
+		    return True
+
+
+		def remove_complete_lines(self, board):
+			# Remove finished lines and makes all above lines move down
+		    lines_removed = 0
+		    y = self.BOARD_HEIGHT - 1 
+		    while y >= 0:
+		        if is_complete_line(board, y):
+		            # above line blank #Flipped
+		            for x in range(self.BOARD_WIDTH):
+		                board[x][0] = BLANK
+		            lines_removed += 1
+		           	# moves lines down
+		            for pull_down_y in range(y, 0, -1):
+		                for x in range(self.BOARD_WIDTH):
+		                    board/[x][pull_down_y] = board[x][pull_down_y - 1]
+		        else:
+		        	# checks new row
+		            y -= 1
+		    return lines_removed, board
+
+# Completed Segment
 
 
 def main():
