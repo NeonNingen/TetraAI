@@ -329,10 +329,7 @@ class Game:
 		                # SATISFIED, WHICH NORMALLY WOULD RAISE AN ERROR.
 		                # NOT SURE WHAT CAUSES THE INDICES TO BE THAT HIGH.
 		                # THIS IS A BAND-AID FIX
-
-
-
-
+		                
 
 		def is_on_board(self, x, y):
 		    return y < self.BOARD_HEIGHT and x >= 0 and x < self.BOARD_WIDTH 
