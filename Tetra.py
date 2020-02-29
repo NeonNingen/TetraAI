@@ -5,6 +5,7 @@ from Tetra_Pieces import *
 Importing my piece module
 A matrix is a board used in Tetris
 Using Colors instead of Colours
+Keep with the PEP 8 Line Length! 79 Characters are the max!
 '''
 
 # RGB Colors
@@ -107,35 +108,46 @@ class Inputs():
 
 			elif event.type == KEYDOWN:
 				if (event.key == K_LEFT or event.key == K_a) and (
-					self.validPiecePlacement(matrix, self.pieceDrop, adj_X = -1)):
+					self.validPiecePlacement(
+						matrix, self.pieceDrop, adj_X = -1)):
 					self.pieceDrop['x'] -= 1
 					self.left = True
 					self.Right = False
 					self.MoveSidewaysReset = time.time()
 
 				elif (event.key == K_RIGHT or event.key == K_d) and (
-					self.validPiecePlacement(matrix, self.pieceDrop, adj_X = 1)):
+					self.validPiecePlacement(
+						matrix, self.pieceDrop, adj_X = 1)):
 					self.pieceDrop['x'] += 1
 					self.Right = True
 					self.Left = False
 					self.MoveSidewaysReset = time.time()
 
 				elif (event.key == K_UP or event.key == K_w):
-					self.pieceDrop['rotation'] = (self.pieceDrop['rotation'] + 1) % len(
+					self.pieceDrop['rotation'] = (
+						self.pieceDrop['rotation'] + 1) % len(
 						PIECES[self.pieceDrop['shape']])
+
 					if not self.validPiecePlacement(matrix, self.pieceDrop):
-						self.pieceDrop['rotation'] = (self.pieceDrop['rotation'] - 1) % len(
+						self.pieceDrop['rotation'] = (
+							self.pieceDrop['rotation'] - 1) % len(
 							PIECES[self.pieceDrop['shape']])
+
 				elif (event.key == K_q):
-					self.pieceDrop['rotation'] = (self.pieceDrop['rotation'] - 1) % len(
+					self.pieceDrop['rotation'] = (
+						self.pieceDrop['rotation'] - 1) % len(
 						PIECES[self.pieceDrop['shape']])
-					if not self.validPiecePlacement(matrix, self.pieceDrop):
-						self.pieceDrop['rotation'] = (self.pieceDrop['rotation'] + 1) % len(
+
+					if not self.validPiecePlacement(
+						matrix, self.pieceDrop):
+						self.pieceDrop['rotation'] = (
+							self.pieceDrop['rotation'] + 1) % len(
 							PIECES[self.pieceDrop['shape']])
 
 				elif (event.key == K_DOWN or event.key == K_s):
 					self.Down = True
-					if self.validPiecePlacement(matrix, self.pieceDrop, adj_Y = 1):
+					if self.validPiecePlacement(
+						matrix, self.pieceDrop, adj_Y = 1):
 						self.pieceDrop['y'] += 1
 					self.MoveDownReset = time.time()
 
@@ -144,18 +156,25 @@ class Inputs():
 					self.Right = False
 					self.Left = False
 					for i in range(1, MATRIXHEIGHT):
-						if not self.validPiecePlacement(matrix, self.pieceDrop, adj_Y = i):
+						if not self.validPiecePlacement(
+							matrix, self.pieceDrop, adj_Y = i):
 							break
 					self.pieceDrop['y'] += i - 1
 
-		if (self.Left or self.Right) and time.time() - self.MoveSidewaysReset > self.SidewaysRate:
-			if self.Left and self.validPiecePlacement(matrix, self.pieceDrop, adj_X = -1):
+		if (self.Left or self.Right) and (
+			time.time() - self.MoveSidewaysReset > self.SidewaysRate):
+
+			if self.Left and self.validPiecePlacement(
+				matrix, self.pieceDrop, adj_X = -1):
 				self.pieceDrop['x'] -= 1
-			elif self.Right and self.validPiecePlacement(matrix, self.pieceDrop, adj_X = 1):
+
+			elif self.Right and self.validPiecePlacement(
+				matrix, self.pieceDrop, adj_X = 1):
 				self.pieceDrop['x'] += 1
 			self.MoveSidewaysReset = time.time()
 
-		if self.Down and time.time() - self.MoveDownReset > self.DownRate and (
+		if self.Down and (
+			time.time() - self.MoveDownReset > self.DownRate) and (
 			self.validPiecePlacement(matrix, pieceDrop, adj_Y = 1)):
 			self.pieceDrop['y'] += 1
 			self.MoveDownReset = time.time()
@@ -174,7 +193,8 @@ class Inputs():
 
 class Display(Inputs):
 	def __init__(self, SCREENWIDTH, SCREENHEIGHT):
-		self.SCREEN = pygame.display.set_mode((SCREENWIDTH, SCREENHEIGHT))
+		self.SCREEN = pygame.display.set_mode((
+			SCREENWIDTH, SCREENHEIGHT))
 		self.BIGFONT = pygame.font.Font('fonts/Tetris.ttf', 175)
 		self.SMALLFONT = pygame.font.Font('fonts/Minecraft.ttf', 18)
 		pygame.display.set_caption('TetraAI')
@@ -199,6 +219,7 @@ class Display(Inputs):
 		pressKeySCR, pressKeyREND = self.maketext('Press a key to play',
 		 									  	   self.SMALLFONT,
 		 									  	   BLUE)
+
 		pressKeyREND.center = (int(SCREENWIDTH / 2),
 							   int(SCREENHEIGHT / 2) + 100)
 		self.SCREEN.blit(pressKeySCR, pressKeyREND)
@@ -207,20 +228,19 @@ class Display(Inputs):
 			pygame.display.update()
 			CLOCK.tick()
 
-	#def pause_screen(self):
-		#super().pause()
-
 
 	def quit(self):
 		return super().checkForExit()
 
 	def drawStatus(self):
-		scoreSCR = self.SMALLFONT.render(f"Score: {self.score}", True, TEXTCL)
+		scoreSCR = self.SMALLFONT.render(
+			f"Score: {self.score}", True, TEXTCL)
 		scoreREND = scoreSCR.get_rect()
 		scoreREND.topleft = (SCREENWIDTH - 150, 20)
 		self.SCREEN.blit(scoreSCR, scoreREND)
 
-		diffiSCR = self.SMALLFONT.render(f"Level: {self.difficulty}", True, TEXTCL)
+		diffiSCR = self.SMALLFONT.render(
+			f"Level: {self.difficulty}", True, TEXTCL)
 		diffiREND = diffiSCR.get_rect()
 		diffiREND.topleft = (SCREENWIDTH - 150, 50)
 		self.SCREEN.blit(diffiSCR, diffiREND)
@@ -239,7 +259,8 @@ class Matrix(Display):
 
 	def matrixToScreen(self, box_x, box_y):
 		# Convert xy coords for matrix to a certain coordinate on screen
-		return (XBORDER + (box_x * MATRIXSIZE)), (YBORDER + (box_y * MATRIXSIZE))
+		return (XBORDER + (box_x * MATRIXSIZE)), (
+			YBORDER + (box_y * MATRIXSIZE))
 
 
 
@@ -287,7 +308,8 @@ class Pieces(Matrix, Display):
 		self.DownRate = 0.1
 		self.Down = False
 		self.score = 0
-		self.difficulty, self.fallRate = evaluatedifficulty_fallrate(self.score)
+		self.difficulty, self.fallRate = evaluatedifficulty_fallrate(
+																self.score)
 		self.pieceDrop = None
 		self.nextPiece = None
 	
@@ -330,7 +352,8 @@ class Pieces(Matrix, Display):
 		# Place Tetrominos on matrix
 		for x in range(PIECEWIDTH):
 			for y in range(PIECEHEIGHT):
-				if PIECES[piece['shape']][piece['rotation']][y][x] != BLANK and (
+				if PIECES[piece['shape']][
+				piece['rotation']][y][x] != BLANK and (
 					x + piece['x'] < 10 and y + piece['y'] < 20):
 					matrix[x + piece['x']][y + piece['y']] = piece['color']
 
@@ -340,12 +363,15 @@ class Pieces(Matrix, Display):
 	def validPiecePlacement(self, matrix, piece, adj_X = 0, adj_Y = 0):
 		for x in range(PIECEWIDTH):
 			for y in range(PIECEHEIGHT):
-				isAboveBoard = y + piece['y'] + adj_Y < 0
-				if isAboveBoard or PIECES[piece['shape']][piece['rotation']][y][x] == BLANK:
+				TopOfBoard = y + piece['y'] + adj_Y < 0
+				if TopOfBoard or (
+					PIECES[piece['shape']][piece['rotation']][y][x] == BLANK):
 					continue
-				if not self.onMatrix(x + piece['x'] + adj_X, y + piece['y'] + adj_Y):
+				if not self.onMatrix(
+					x + piece['x'] + adj_X, y + piece['y'] + adj_Y):
 					return False
-				if matrix[x + piece['x'] + adj_X][y + piece['y'] + adj_Y] != BLANK:
+				if matrix[
+				x + piece['x'] + adj_X][y + piece['y'] + adj_Y] != BLANK:
 					return False
 		return True
 
