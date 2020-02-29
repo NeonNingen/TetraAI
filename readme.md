@@ -11,31 +11,45 @@ Creating a tetris AI that plays Tetris.\
 
 ![image of tetris](https://s3.amazonaws.com/tetris-www/assets/article/2017/06/14/tetris-lingo-feature_feature.jpg)
 
-###### Project is still a **WIP**, therefore running the code will lead to errors. 
+###### Project is now 80% of the way complete, all that is left is the AI
 
 __Update log:__
 
 ```python
 Update #1 (14/12/2019): First push on to git! Currently at 30 - 40%ish. Main game source found at: *Tetra.py*
 Update #2 (15/12/2019): Second and mini push! 183 Additions and 45 deletions!
+Update #3 (29/02/2020): Third/Forth push! 1,346 additions and 431 deletions!
 ```
-**Added**:
-- [x] **`Valid_Quit()`** # *Check if quiting program was done correctly*
-- [x] **`makeTextObjs()`** # *Making Text to output on screen*
-- [x] **`show_text_on_screen()`** # *Output text on screen function*
-- [x] **`terminate()`** # *End/Kill Program*
-- [x] **`checkForKeyPress()`** # *Check for keypress*
-- [x] **`fall_frequency_and_level()`** # *Score and level system*
-- [x] **`return_new_piece()`** # *Returns a random tetramino piece to the board*
-- [x] **`create_box()`** # *Create's game box/grid area to work with the next function*
-- [x] **`create_board()`** # *Create's game board works in cojunction with create_box()*
-- [x] **`get_blank_board()`** # *Makes blank board*
-- [x] **`add_to_board()`** # *Add pieces & coords to the board*
-- [x] **`is_on_board()`** # *Check piece is on the board*
-- [x] **`correct_position()`** # *Check if pieces are in the correct order*
-- [x] **`is_complete_line()`** # *If the line is complete check*
-- [x] **`remove_complete_lines()`** # *If line is complete then remove*
+### **Rehaul Update**
+
+Everything has been completely rehauled, I have pretty much for the past 3 months.
+Reworked from scratch, and finally I have completed about 80% of my project.
+I have been able to completely create a functional tetris game. 
+And soon wil be adding my AI algorithm to the code!
+
+#### __Current look of program:__
+
+*Title Screen*
+![](images/TetraAIMG1.png)
+
+*Game Screen*
+![](images/TetraAIMG2.png)
+
+*Pause Screen*
+![](images/TetraAIMG3.png)
+
+*Game Over Screen*
+![](images/TetraAIMG4.png)
+
+**New Additions**
+
+- [x] **`test_tetra`** # *The folder contains all the screenshots of the program leading up to it's current state*
+- [x] **`fonts, images`** # *Folder containing all the fonts and images for the program*
+- [x] **`.gitignore`** # *File retaining ignored temp files*
+- [x] **`Tetra_Pieces.py`** # *Module for Tetra.py which holds the tetromino structure*
+
 
 Debugging and making ruff ideas on how all these work was complicated!\
 **To do list**:
-- [ ] *test_tetra (Tetra with small segments taken out for early testing of the program*
+- [ ] *Polish up the program with smaller additions*
+- [ ] *Add AI to the program*
