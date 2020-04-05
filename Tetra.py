@@ -1,4 +1,7 @@
 import pygame, random, time, sys
+import math, numpy, copy, pyautogui
+import matplotlib.pyplot as plot
+import pygame.locals as keys
 from pygame.locals import *
 from Tetra_Pieces import *
 '''
@@ -46,6 +49,19 @@ PIECES = {'S': display_PIECE.piece_S(),
 PIECEWIDTH = 5
 PIECEHEIGHT = 5
 
+# AI Properties
+pyautogui.PAUSE = 0.03
+pyautogui.FAILSAFE = True
+MAXGAMES = 5
+
+# Plot Properties
+scoreArray = []
+weight0Array = []
+weight1Array = []
+weight2Array = []
+weight3Array = []
+gameIndexArray = []
+
 # Init Properties
 BLANK = '0'
 global CLOCK
@@ -53,15 +69,9 @@ CLOCK = pygame.time.Clock()
 
 def evaluatedifficulty_fallrate(score):
 	difficulty = int(score / 10) + 1
-	fallRate = 0.22 - (difficulty * 0.02)
+	fallRate = 0.07 * math.exp(
+		(1 - difficulty) / 3)
 	return difficulty, fallRate
-
-
-
-def exit():
-	pygame.quit()
-	quit()
-	sys.exit()
 
 
 
@@ -72,10 +82,14 @@ class Inputs():
 
 	def checkForExit(self):
 		for event in pygame.event.get(QUIT):
-			exit()
+			pygame.quit()
+			quit()
+			sys.exit()
 		for event in pygame.event.get(KEYUP):
 			if event.key == K_ESCAPE:
-				exit()
+				pygame.quit()
+				quit()
+				sys.exit()
 			pygame.event.post(event)
 
 
@@ -175,7 +189,7 @@ class Inputs():
 
 		if self.Down and (
 			time.time() - self.MoveDownReset > self.DownRate) and (
-			self.validPiecePlacement(matrix, pieceDrop, adj_Y = 1)):
+			self.validPiecePlacement(matrix, self.pieceDrop, adj_Y = 1)):
 			self.pieceDrop['y'] += 1
 			self.MoveDownReset = time.time()
 
@@ -183,7 +197,8 @@ class Inputs():
 
 			if not self.validPiecePlacement(matrix, self.pieceDrop, adj_Y = 1):
 				self.addToMatrix(matrix, self.pieceDrop)
-				self.score += self.removeCompletedLines(matrix)
+				lines, matrix = self.removeCompletedLines(matrix)
+				self.score += lines * lines
 				self.difficulty, self.fallRate = evaluatedifficulty_fallrate(self.score)
 				self.pieceDrop = None
 			else:
@@ -197,7 +212,10 @@ class Display(Inputs):
 			SCREENWIDTH, SCREENHEIGHT))
 		self.BIGFONT = pygame.font.Font('fonts/Tetris.ttf', 175)
 		self.SMALLFONT = pygame.font.Font('fonts/Minecraft.ttf', 18)
+		Icon = pygame.image.load('images/TetraAI_Icon.png')
+		pygame.display.set_icon(Icon)
 		pygame.display.set_caption('TetraAI')
+
 	
 	def clearscreen(self):
 		self.SCREEN.fill(BACKGROUND)
@@ -216,7 +234,7 @@ class Display(Inputs):
 							int(SCREENHEIGHT / 2) - 3)
 		self.SCREEN.blit(titleSCR, titleREND)
 
-		pressKeySCR, pressKeyREND = self.maketext('Press a key to play',
+		pressKeySCR, pressKeyREND = self.maketext('Press wait!',
 		 									  	   self.SMALLFONT,
 		 									  	   BLUE)
 
@@ -224,9 +242,9 @@ class Display(Inputs):
 							   int(SCREENHEIGHT / 2) + 100)
 		self.SCREEN.blit(pressKeySCR, pressKeyREND)
 
-		while super().checkForKeyInput() == None:
-			pygame.display.update()
-			CLOCK.tick()
+		pygame.display.update()
+		CLOCK.tick()
+		time.sleep(0.5)              
 
 
 	def quit(self):
@@ -234,7 +252,7 @@ class Display(Inputs):
 
 	def drawStatus(self):
 		scoreSCR = self.SMALLFONT.render(
-			f"Score: {self.score}", True, TEXTCL)
+			f"Score: {self.score} ", True, TEXTCL)
 		scoreREND = scoreSCR.get_rect()
 		scoreREND.topleft = (SCREENWIDTH - 150, 20)
 		self.SCREEN.blit(scoreSCR, scoreREND)
@@ -244,6 +262,18 @@ class Display(Inputs):
 		diffiREND = diffiSCR.get_rect()
 		diffiREND.topleft = (SCREENWIDTH - 150, 50)
 		self.SCREEN.blit(diffiSCR, diffiREND)
+
+		moveSCR = self.SMALLFONT.render(
+			f"Current Move: {self.currentMove}", True, TEXTCL)
+		moveREND = moveSCR.get_rect()
+		moveREND.topleft = (SCREENWIDTH - 275, 200)
+		self.SCREEN.blit(moveSCR, moveREND)
+
+		completeSCR = self.SMALLFONT.render(
+			f"Games Completed: {self.gamesCompleted}", True, TEXTCL)
+		completeREND = completeSCR.get_rect()
+		completeREND.topleft = (SCREENWIDTH - 275, 230)
+		self.SCREEN.blit(completeSCR, completeREND)
 
 
 class Matrix(Display):
@@ -295,23 +325,153 @@ class Matrix(Display):
 			for y in range(MATRIXHEIGHT):
 				self.newOutline(x, y, matrix[x][y])
 
-
-class Pieces(Matrix, Display):
+class AI(Matrix):
 	def __init__(self):
 		super().__init__()
-		self.Left = False
-		self.Right = False
-		self.FallReset = time.time()
-		self.MoveDownReset = time.time()
-		self.MoveSidewaysReset = time.time()
-		self.SidewaysRate = 0.15
-		self.DownRate = 0.1
-		self.Down = False
-		self.score = 0
-		self.difficulty, self.fallRate = evaluatedifficulty_fallrate(
-																self.score)
-		self.pieceDrop = None
-		self.nextPiece = None
+
+
+
+	def getParams(self, matrix):
+		heights = [0] * MATRIXWIDTH
+		diffs = [0] * (MATRIXWIDTH - 1)
+		holes = 0
+		diffSum = 0
+
+
+		for i in range(0, MATRIXWIDTH):
+			for j in range(0, MATRIXHEIGHT):
+				if int(matrix[i][j]) > 0:  
+					heights[i] = MATRIXHEIGHT - j
+					break
+
+		for i in range(0, len(diffs)):
+			diffs[i] = heights[i + 1] - heights[i]
+
+		maxHeight = max(heights)
+
+		for i in range(0, MATRIXWIDTH):
+			occupied = 0
+			for j in range(0, MATRIXHEIGHT):
+				if int(matrix[i][j]) > 0:
+					occupied = 1
+				if int(matrix[i][j]) == 0 and occupied == 1:
+					holes += 1
+
+		heightSum = sum(heights)
+		for i in diffs:
+			diffSum += abs(i)
+		return heightSum, diffSum, maxHeight, holes
+
+
+	def predictedScore(self, testMatrix, weights):
+		heightSum, diffSum, maxHeight, holes = self.getParams(testMatrix)
+		A = weights[0]
+		B = weights[1]
+		C = weights[2]
+		D = weights[3]
+		testScore = float(A * heightSum + B * diffSum + C * maxHeight + D * holes)
+		return testScore
+
+
+	def emulateMatrix(self, testMatrix, testPiece, move):
+		rotation = move[0]
+		sideways = move[1]
+		testLinesRemoved = 0
+		referneceHeight = self.getParams(testMatrix)[0]
+		if testPiece is None:
+			return None
+
+		for i in range(0, rotation):
+			testPiece['rotation'] = (testPiece['rotation'] + 1
+				) % len(PIECES[testPiece['shape']])
+
+		if not self.validPiecePlacement(
+			testMatrix, testPiece, adj_X = sideways, adj_Y = 0):
+			return None
+
+		testPiece['x'] += sideways
+		for i in range(0, MATRIXHEIGHT):
+			if self.validPiecePlacement(
+				testMatrix, testPiece, adj_X = 0, adj_Y = 1):
+				testPiece['y'] = i
+
+		if self.validPiecePlacement(testMatrix, testPiece, adj_X = 0, adj_Y = 0):
+			self.addToMatrix(testMatrix, testPiece)
+			self.testLinesRemoved, testMatrix = self.removeCompletedLines(testMatrix)
+
+		heightSum, diffSum, maxHeight, holes = self.getParams(testMatrix)
+		reward = 5 * (testLinesRemoved * testLinesRemoved) - (
+			heightSum - referneceHeight)
+		return testMatrix, reward
+
+
+	def findBestMove(self, matrix, piece, weights, learning):
+		moveList = []
+		scoreList = []
+		for rotation in range(0, len(PIECES[piece['shape']])):
+			for sideways in range(-5 ,6):
+				move = [rotation, sideways]
+				testMatrix = copy.deepcopy(matrix)
+				testPiece = copy.deepcopy(piece)
+				testMatrix = self.emulateMatrix(testMatrix, testPiece, move)
+				if testMatrix is not None:
+					moveList.append(move)
+					testScore = self.predictedScore(testMatrix[0], weights)
+					scoreList.append(testScore)
+		bestScore = max(scoreList)
+		bestMove = moveList[scoreList.index(bestScore)]
+
+		if random.random() < learning:
+			move = moveList[random.randint(0, len(moveList) - 1)]
+		else:
+			move = bestMove
+		return move
+
+
+	def makeMove(self, move):
+		rotation = move[0]
+		sideways = move[1]
+		if rotation != 0:
+			pyautogui.press('up')
+			rotation -= 1
+		else:
+			if sideways == 0:
+				pyautogui.press('space')
+			if sideways < 0:
+				pyautogui.press('left')
+				sideways += 1
+			if sideways > 0:
+				pyautogui.press('right')
+				sideways -= 1
+
+		return [rotation, sideways]
+
+	def gradientDescent(self, matrix, piece, weights, learning):
+		move = self.findBestMove(matrix, piece, weights, learning)
+		oldParams = self.getParams(matrix)
+		testMatrix = copy.deepcopy(matrix)
+		testPiece = copy.deepcopy(piece)
+		testMatrix = self.emulateMatrix(testMatrix, testPiece, move)
+		if testMatrix is not None:
+			self.newParams = self.getParams(testMatrix[0])
+			self.reward = testMatrix[1]
+		for i in range(0, len(weights)):
+			weights[i] = weights[i] + self.alpha * weights[i] * (
+				self.reward - oldParams[i] + self.phi * self.newParams[i])
+		regularizer = abs(sum(weights))
+		for i in range(0, len(weights)):
+			weights[i] = 100 * weights[i] / regularizer
+			#1e4 = 10000
+			weights[i] = math.floor(1e4 * weights[i]) / 1e4
+		return move, weights
+
+
+
+
+
+class Pieces(AI):
+	def __init__(self):
+		super().__init__()
 	
 	def makePieces(self):
 		shape = random.choice(list(PIECES.keys()))
@@ -394,28 +554,74 @@ class Pieces(Matrix, Display):
 				numLinesCleared += 1
 			else:
 				y -= 1
-		return numLinesCleared
+		return numLinesCleared, matrix
+		
+
+	
+
+class Game(Pieces):
+	def __init__(self):
+		super().__init__()
+		# Game Setup Variables
+		self.Left = False
+		self.Right = False
+		self.FallReset = time.time()
+		self.MoveDownReset = time.time()
+		self.MoveSidewaysReset = time.time()
+		self.SidewaysRate = 0.075
+		self.DownRate = 0.05
+		self.Down = False
+		self.score = 0
+		self.difficulty, self.fallRate = evaluatedifficulty_fallrate(
+																self.score)
+		self.pieceDrop = None
+		self.nextPiece = None
+		# AI Variables, alpha = LearningRate, phi = DiscountFactor
+		self.gamesCompleted = 0
+		self.weights = [-1, -1, -1, -30]
+		self.learning = 0.5
+		self.currentMove = [0, 0]
+		self.alpha = 0.01
+		self.phi = 0.9
 
 
-	def gameplay(self, matrix):
-		super().movement(matrix)
-
-	def Start(self, matrix, FPS):
+	def Start(self, FPS):
+		# Reset Variables
+		self.FallReset = time.time()
+		self.MoveDownReset = time.time()
+		self.MoveSidewaysReset = time.time()
+		self.score = 0
+		self.difficulty, self.fallRate = evaluatedifficulty_fallrate(
+																self.score)
+		reward = 0
+		self.currentMove = [0, 0]
+		matrix = self.createMatrix()
 		self.pieceDrop = self.makePieces()
 		self.nextPiece = self.makePieces()
 
+
 		while True:
-			if self.pieceDrop == None:
+			if self.pieceDrop is None:
 				self.pieceDrop = self.nextPiece
 				self.nextPiece = self.makePieces()
 				self.FallReset = time.time()
 
-			if not self.validPiecePlacement(matrix, self.pieceDrop):
-				return
+				if not self.validPiecePlacement(matrix, self.pieceDrop):
+					self.gamesCompleted += 1
+					return 
+				self.currentMove, self.weights = self.gradientDescent(matrix,
+					self.pieceDrop, self.weights, self.learning)
+
+				if self.learning > 0.001:
+					self.learning = self.learning * 0.99
+				else:
+					self.learning = 0
+
 
 			self.quit()
+			self.currentMove = self.makeMove(self.currentMove)
 
-			self.gameplay(matrix)
+			self.movement(matrix)
 			self.SCREEN.fill(BACKGROUND)
 			self.displayMatrix(matrix)
 			self.drawStatus()
@@ -427,28 +633,58 @@ class Pieces(Matrix, Display):
 			CLOCK.tick(FPS)
 
 
+	def Results(self):
+		print("Game Number ", self.gamesCompleted,
+			" achieved a score of: ", self.score)
+		scoreArray.append(self.score)
+		gameIndexArray.append(self.gamesCompleted)
+		weight0Array.append(-self.weights[0])
+		weight1Array.append(-self.weights[1])
+		weight2Array.append(-self.weights[2])
+		weight3Array.append(-self.weights[3])
+		self.clearscreen()
+		self.presentText('Game Over')
+		if self.gamesCompleted >= MAXGAMES:
+			plot.figure(1)
+			plot.subplot(211)
+			plot.plot(gameIndexArray, scoreArray, 'k-')
+			plot.xlabel('Game Number')
+			plot.ylabel('Game Score')
+			plot.title('Learning Curve')
+			plot.xlim(1, max(gameIndexArray))
+			plot.ylim(0, max(scoreArray) * 1.1)
+			plot.subplot(212)
+			plot.xlabel('Game Number')
+			plot.ylabel('Weights')
+			plot.title('Learning Curve')
+			axis = plot.gca()
+			axis.set_yscale('log')
+			plot.plot(gameIndexArray, weight0Array, label="Aggregate Height")
+			plot.plot(gameIndexArray, weight1Array, label="Unevenness")
+			plot.plot(gameIndexArray, weight2Array, label="Maximum Height")
+			plot.plot(gameIndexArray, weight3Array, label="Number of Holes")
+			plot.legend(loc='lower left')
+			plot.xlim(0, max(gameIndexArray))
+			plot.ylim(0.0001, 100)
+			plot.show()
+
+
 
 pygame.init()
 exhibit = Display(SCREENWIDTH, SCREENHEIGHT) # Synonyms for display
 grid = Matrix()
 tetromino = Pieces()
 pressing = Inputs()
+run = Game()
 
-
-
-
-def Game():
-	matrix = grid.createMatrix()
-	tetromino.Start(matrix, FPS)
 
 def main():
 	exhibit.presentText('TetraAI')
+	time.sleep(2)
 	exhibit.clearscreen()
 	while True:
-		Game()
-		exhibit.clearscreen()
-		exhibit.presentText('Game Over')
-
+		run.Start(FPS)
+		run.Results()
 main()
 
 

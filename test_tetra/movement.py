@@ -175,7 +175,7 @@ class Inputs():
 
 		if self.Down and (
 			time.time() - self.MoveDownReset > self.DownRate) and (
-			self.validPiecePlacement(matrix, pieceDrop, adj_Y = 1)):
+			self.validPiecePlacement(matrix, self.pieceDrop, adj_Y = 1)):
 			self.pieceDrop['y'] += 1
 			self.MoveDownReset = time.time()
 
@@ -197,7 +197,10 @@ class Display(Inputs):
 			SCREENWIDTH, SCREENHEIGHT))
 		self.BIGFONT = pygame.font.Font('fonts/Tetris.ttf', 175)
 		self.SMALLFONT = pygame.font.Font('fonts/Minecraft.ttf', 18)
+		Icon = pygame.image.load('images/TetraAI_Icon.png')
+		pygame.display.set_icon(Icon)
 		pygame.display.set_caption('TetraAI')
+
 	
 	def clearscreen(self):
 		self.SCREEN.fill(BACKGROUND)
