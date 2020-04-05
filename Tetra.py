@@ -52,7 +52,7 @@ PIECEHEIGHT = 5
 # AI Properties
 pyautogui.PAUSE = 0.03
 pyautogui.FAILSAFE = True
-MAXGAMES = 5
+MAXGAMES = 75
 
 # Plot Properties
 scoreArray = []
@@ -656,7 +656,7 @@ class Game(Pieces):
 			plot.subplot(212)
 			plot.xlabel('Game Number')
 			plot.ylabel('Weights')
-			plot.title('Learning Curve')
+			plot.title('Learning Curve                     ')
 			axis = plot.gca()
 			axis.set_yscale('log')
 			plot.plot(gameIndexArray, weight0Array, label="Aggregate Height")
