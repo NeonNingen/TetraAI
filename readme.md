@@ -20,6 +20,7 @@ Update #1 (14/12/2019): First push on to git! Currently at 30 - 40%ish. Main gam
 Update #2 (15/12/2019): Second and mini push! 183 additions and 45 deletions!
 Update #3 (29/02/2020): Third/Forth push! 1,346 additions and 431 deletions!
 Update #4 (05/04/2020): Fifth Push! 289 additions and 50 deletions! The program is
+Update #5: Miscellaneous Update (27/04/2020)
 ```
 ### **Completed Updated!**
 
@@ -30,6 +31,8 @@ how to make this program function!
 Now that we come to the end of this program, I can say it's been quite an adventure with lots and lots
 of debugging!
 But I still will update this program in terms of bug fixes. Otherwise this project is completed!
+
+Update 5: The new update includes a few bug fixes with the code plus a new exe file that can run the program as long as you have the required packages stated in requirements.txt!
 
 ***Tetra AI was completed on 05/04/2020***
 
@@ -61,8 +64,12 @@ But I still will update this program in terms of bug fixes. Otherwise this proje
 
 - [x] **AI** # Add AI to `tetra.py` now we have the power of AI!
 - [x] **Project is completed!** # Yeah we done
+- [x] **An complied exe file that runs the game** # Whatt
+- [x] **Smaller Bug fixes** # Gotta squash them bugs
+- [x] **Newly added concept photos!** # What I hoped for
 
 
 Debugging and making ruff ideas on how all these work was complicated!\
 **To do list**:
 - [ ] Bug fixes if any
+- [ ] Might add a get_pip.py file possibly

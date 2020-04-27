@@ -1,5 +1,6 @@
 import pygame, random, time, sys
 import math, numpy, copy, pyautogui
+import pkg_resources.py2_warn
 import matplotlib.pyplot as plot
 import pygame.locals as keys
 from pygame.locals import *
@@ -10,7 +11,6 @@ A matrix is a board used in Tetris
 Using Colors instead of Colours
 Keep with the PEP 8 Line Length! 79 Characters are the max!
 '''
-
 # RGB Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -377,31 +377,34 @@ class AI(Matrix):
 		rotation = move[0]
 		sideways = move[1]
 		testLinesRemoved = 0
-		referneceHeight = self.getParams(testMatrix)[0]
+		referenceHeight = self.getParams(testMatrix)[0]
 		if testPiece is None:
 			return None
 
 		for i in range(0, rotation):
-			testPiece['rotation'] = (testPiece['rotation'] + 1
-				) % len(PIECES[testPiece['shape']])
+			testPiece['rotation'] = (
+				testPiece['rotation'] + 1) % len(
+				PIECES[testPiece['shape']])
 
 		if not self.validPiecePlacement(
-			testMatrix, testPiece, adj_X = sideways, adj_Y = 0):
+			testMatrix, testPiece, adj_X= sideways, adj_Y=0):
 			return None
 
 		testPiece['x'] += sideways
 		for i in range(0, MATRIXHEIGHT):
 			if self.validPiecePlacement(
-				testMatrix, testPiece, adj_X = 0, adj_Y = 1):
+				testMatrix, testPiece, adj_X=0, adj_Y=1):
 				testPiece['y'] = i
 
-		if self.validPiecePlacement(testMatrix, testPiece, adj_X = 0, adj_Y = 0):
+		if self.validPiecePlacement(
+			testMatrix, testPiece, adj_X=0, adj_Y=0):
 			self.addToMatrix(testMatrix, testPiece)
-			self.testLinesRemoved, testMatrix = self.removeCompletedLines(testMatrix)
+			testLinesRemoved, testMatrix = self.removeCompletedLines(
+													testMatrix)
 
 		heightSum, diffSum, maxHeight, holes = self.getParams(testMatrix)
 		reward = 5 * (testLinesRemoved * testLinesRemoved) - (
-			heightSum - referneceHeight)
+			heightSum - referenceHeight)
 		return testMatrix, reward
 
 
@@ -453,11 +456,11 @@ class AI(Matrix):
 		testPiece = copy.deepcopy(piece)
 		testMatrix = self.emulateMatrix(testMatrix, testPiece, move)
 		if testMatrix is not None:
-			self.newParams = self.getParams(testMatrix[0])
-			self.reward = testMatrix[1]
+			newParams = self.getParams(testMatrix[0])
+			reward = testMatrix[1]
 		for i in range(0, len(weights)):
 			weights[i] = weights[i] + self.alpha * weights[i] * (
-				self.reward - oldParams[i] + self.phi * self.newParams[i])
+				reward - oldParams[i] + self.phi * newParams[i])
 		regularizer = abs(sum(weights))
 		for i in range(0, len(weights)):
 			weights[i] = 100 * weights[i] / regularizer
@@ -487,7 +490,7 @@ class Pieces(AI):
 
 	def drawPiece(self, piece, pixel_x = None, pixel_y = None):
 		shapeDrawen = PIECES[piece['shape']][piece['rotation']]
-		if pixel_x == None and pixel_y == None:
+		if pixel_x is None and pixel_y is None:
 			pixel_x, pixel_y = super().matrixToScreen(piece['x'], piece['y'])
 
 		for x in range(PIECEWIDTH):
@@ -593,7 +596,7 @@ class Game(Pieces):
 		self.score = 0
 		self.difficulty, self.fallRate = evaluatedifficulty_fallrate(
 																self.score)
-		reward = 0
+		self.reward = 0
 		self.currentMove = [0, 0]
 		matrix = self.createMatrix()
 		self.pieceDrop = self.makePieces()
@@ -656,7 +659,7 @@ class Game(Pieces):
 			plot.subplot(212)
 			plot.xlabel('Game Number')
 			plot.ylabel('Weights')
-			plot.title('Learning Curve                     ')
+			plot.title('Learning Curve')
 			axis = plot.gca()
 			axis.set_yscale('log')
 			plot.plot(gameIndexArray, weight0Array, label="Aggregate Height")
