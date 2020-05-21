@@ -212,8 +212,8 @@ class Display(Inputs):
 			SCREENWIDTH, SCREENHEIGHT))
 		self.BIGFONT = pygame.font.Font('fonts/Tetris.ttf', 175)
 		self.SMALLFONT = pygame.font.Font('fonts/Minecraft.ttf', 18)
-		Icon = pygame.image.load('images/TetraAI_Icon.png')
-		pygame.display.set_icon(Icon)
+		ICON = pygame.image.load('images/TetraAI_Icon.png')
+		pygame.display.set_icon(ICON)
 		pygame.display.set_caption('TetraAI')
 
 	
